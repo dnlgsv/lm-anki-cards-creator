@@ -1,0 +1,15 @@
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "I", "B", "C4", "N", "D"]
+ignore = ["E501"]  # Ignore line length violations
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+python_version = "3.12.7"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
