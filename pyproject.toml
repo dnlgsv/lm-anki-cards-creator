@@ -7,7 +7,7 @@ ignore = ["E501"]  # Ignore line length violations
 convention = "google"
 
 [tool.mypy]
-python_version = "3.12.7"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_calls = true
