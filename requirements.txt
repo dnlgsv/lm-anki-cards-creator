@@ -1,0 +1,4 @@
+elevenlabs==1.51.0
+genanki==0.13.1
+gTTS==2.5.4
+llama_cpp_python==0.3.7
