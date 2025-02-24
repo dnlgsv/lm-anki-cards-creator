@@ -97,11 +97,19 @@ def parse_words(args: argparse.Namespace) -> list[str]:
         # Assume comma-separated words.
         words = [word.strip() for word in args.words.split(",") if word.strip()]
     elif args.file:
-        # Read words from a file (one word per line).
-        with open(args.file, "r") as f:
-            words = [line.strip() for line in f if line.strip()]
+        words = parse_file(args.file)
     else:
         raise ValueError("Either --words or --file must be provided.")
+    return words
+
+
+def parse_file(file_path: str) -> list[str]:
+    """Parse words from a file path."""
+    words = []
+    with open(file_path, "r") as f:
+        for line in f:
+            for word in line.split(","):
+                words.append(word.strip())
     return words
 
 
