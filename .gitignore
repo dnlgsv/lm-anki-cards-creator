@@ -35,7 +35,12 @@ tmp/
 temp/
 
 # Data
-data/
+data/anki_decks/
+data/anki decks/
+data/audio/
+data/json files/
+data/text files/
+data/processed_expressions/
 
 # Models
 models/
