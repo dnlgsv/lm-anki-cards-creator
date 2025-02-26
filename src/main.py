@@ -20,7 +20,7 @@ with open("prompts/prompt.json") as f:
     prompt = json.load(f)
 
 
-def get_expression_card_info(model, expression: str) -> dict:
+def get_expression_card_info(model, prompt: str, expression: str) -> dict:
     """Generate card information for a given expression by interacting with a language model."""
     response = model.create_chat_completion(
         messages=[
@@ -44,38 +44,40 @@ def get_expression_card_info(model, expression: str) -> dict:
 
 
 def generate_cards_from_words(
-    model, words_list: list[str], audio_format: str = "mp3"
+    model, prompt: str, words_list: list[str], audio_format: str = "mp3"
 ) -> list[dict]:
     """Generate Anki cards from a list of words by creating JSON data and corresponding audio files."""
     cards = []
     n = len(words_list)
     print(f"Number of words to generate cards for: {n}")
-    for idx, w in enumerate(words_list):
+    for idx, word in enumerate(words_list):
         print("-/-" * 20)
-        print(f"Generating card for '{w}': {idx + 1}/{n}")
-        card_data = get_expression_card_info(model, w)
+        print(f"Generating card for '{word}': {idx + 1}/{n}")
+        card_data = get_expression_card_info(model, prompt, word)
         output_json_path = (
-            f"data/processed_expressions/{w.lower().replace(' ', '_')}.json"
+            f"data/processed_expressions/{word.lower().replace(' ', '_')}.json"
         )
         with open(output_json_path, "w") as f:
             json.dump(card_data, f, indent=4)
         voicer = TextToSpeech()
 
         # Generate audio files for the word, definition, and example.
-        audio_word_filename = f"{w.lower().replace(' ', '_')}_expression.{audio_format}"
+        audio_word_filename = (
+            f"{word.lower().replace(' ', '_')}_expression.{audio_format}"
+        )
         voicer.text_to_speech_elevenlabs(
             card_data["expression"], f"data/audio/{audio_word_filename}"
         )
 
         audio_definition_filename = (
-            f"{w.lower().replace(' ', '_')}_definition.{audio_format}"
+            f"{word.lower().replace(' ', '_')}_definition.{audio_format}"
         )
         voicer.text_to_speech_elevenlabs(
             card_data["definition"], f"data/audio/{audio_definition_filename}"
         )
 
         audio_example_filename = (
-            f"{w.lower().replace(' ', '_')}_examples.{audio_format}"
+            f"{word.lower().replace(' ', '_')}_examples.{audio_format}"
         )
         voicer.text_to_speech_elevenlabs(
             card_data["examples"], f"data/audio/{audio_example_filename}"
