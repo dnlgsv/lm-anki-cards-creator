@@ -18,13 +18,13 @@ from main import (
     parse_file,
 )
 
-# Load the prompt once.
-with open("prompts/prompt.json") as f:
-    prompt = json.load(f)
-
 
 def main():
     """Streamlit app for generating Anki flashcards."""
+    # Load the prompt once.
+    with open("prompts/prompt.json") as f:
+        prompt = json.load(f)
+
     st.title("Anki Cards Creator")
     st.markdown(
         """
@@ -35,6 +35,17 @@ def main():
     # Sidebar for configuration.
     st.sidebar.header("Configuration")
     input_method = st.radio("Input method", ("Text Input", "File Upload"))
+    context_field = st.text_area(
+        "Context/topic",
+        value="",
+        help="Provide a context/topic in which the words will be used.",
+    )
+    context = ""
+    if context_field:
+        context = f"\nUse the next context/topic when writing examples: {context_field}"
+    if context:
+        prompt += context
+
     words = []
     if input_method == "Text Input":
         words_input = st.text_area(
@@ -73,7 +84,10 @@ def main():
             verbose=False,
         )
 
-        cards_data = generate_cards_from_words(model, words, audio_format=audio_format)
+        cards_data = generate_cards_from_words(
+            model, prompt, words, audio_format=audio_format
+        )
+        st.write(cards_data, unsafe_allow_html=True)
 
         # Create the Anki deck.
         my_deck = create_anki_deck(cards_data, deck_name=deck_name)
