@@ -27,11 +27,11 @@ lm-anki-cards-creator leverages both small and large language models to generate
   curl -L -o ./models/gemma-2-2b-it-Q8_0.gguf https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/blob/main/gemma-2-2b-it-Q8_0.gguf
   ```
 ## Usage
-- **Automatic Mode:** Run the script with the `--auto` flag for complete automatic deck creation.
+- **Automatic Mode:** Run the script with the `--file` or `--words` flag for complete automatic flashcards creation.
   ```
-  python main.py --auto input.txt
+  python main.py --file filename.txt
   ```
-- **Manual Mode in UI:** Run the script without the `--auto` flag to manually customize the deck in the UI.
+- **Manual Mode in UI:** Run the streamlit app to manually customize the deck in the UI.
   ```
-  python main.py input.txt
+  streamlit run streamlit_app.py
   ```
