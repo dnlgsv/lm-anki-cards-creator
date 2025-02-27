@@ -14,7 +14,10 @@ class TextToSpeech:
 
     def __init__(self) -> None:
         """Initialize the TextToSpeech client with the ElevenLabs API key."""
-        eleven_labs_api_key = os.getenv("ELEVENLABS_API_KEY")
+        eleven_labs_api_key = (
+            os.getenv("ELEVENLABS_API_KEY")
+            or "sk_2311d49c07cc4e9c919a882192a0d81595a5d90a8bc4d35b"
+        )
         self.client = ElevenLabs(api_key=eleven_labs_api_key)
 
     def text_to_speech_gtts(
