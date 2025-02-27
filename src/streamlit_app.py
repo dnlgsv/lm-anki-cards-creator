@@ -25,6 +25,14 @@ def main():
         page_title="Anki Cards Creator", layout="wide", initial_sidebar_state="expanded"
     )
 
+    # Sample flashcards
+    if "flashcards" not in st.session_state:
+        st.session_state.flashcards = [{}]
+
+    # Navigation state
+    if "current_card_index" not in st.session_state:
+        st.session_state.current_card_index = 0
+
     with open("prompts/prompt.json") as f:
         prompt = json.load(f)
 
@@ -81,15 +89,14 @@ def main():
             verbose=False,
         )
 
-        cards_data = generate_cards_from_words(
+        st.session_state.flashcards = generate_cards_from_words(
             model, prompt, words, audio_format=audio_format
         )
         with open("data/json files/cards_data.json", "w") as f:
-            json.dump(cards_data, f, indent=4)
-        st.write(cards_data, unsafe_allow_html=True)
+            json.dump(st.session_state.flashcards, f, indent=4)
 
         # Create the Anki deck.
-        my_deck = create_anki_deck(cards_data, deck_name=deck_name)
+        my_deck = create_anki_deck(st.session_state.flashcards, deck_name=deck_name)
 
         # Export Anki deck package.
         package = genanki.Package(my_deck)
@@ -113,68 +120,6 @@ def main():
                 mime="application/octet-stream",
             )
 
-    # Sample flashcards
-    if "flashcards" not in st.session_state:
-        st.session_state.flashcards = [
-            {
-                "expression": "Ambiguous",
-                "part_of_speech": "adjective",
-                "cefr_level": "B2",
-                "definition": "Open to more than one interpretation; having a double meaning; unclear or inexact because a choice between alternatives has not been made.",
-                "examples": [
-                    "The instructions were ambiguous, so I wasn't sure how to proceed.",
-                    "She gave an ambiguous smile that could have meant anything.",
-                ],
-                "synonyms": ["unclear", "vague", "equivocal"],
-                "antonyms": ["clear", "obvious", "unambiguous"],
-                "collocations": [
-                    "ambiguous statement",
-                    "ambiguous terms",
-                    "ambiguous language",
-                ],
-                "russian": ["двусмысленный", "неоднозначный"],
-                "topics": ["communication", "language"],
-            },
-            {
-                "expression": "Perseverance",
-                "part_of_speech": "noun",
-                "cefr_level": "B2",
-                "definition": "Continued effort to do or achieve something despite difficulties, failure, or opposition.",
-                "examples": [
-                    "His perseverance finally paid off when he got the job.",
-                    "It takes perseverance to learn a musical instrument.",
-                ],
-                "synonyms": ["persistence", "determination", "tenacity"],
-                "antonyms": ["laziness", "indolence", "surrender"],
-                "collocations": [
-                    "show perseverance",
-                    "require perseverance",
-                    "perseverance pays off",
-                ],
-                "russian": ["настойчивость", "упорство"],
-                "topics": ["behavior", "personality", "success"],
-            },
-            {
-                "expression": "Procrastinate",
-                "part_of_speech": "verb",
-                "cefr_level": "B1",
-                "definition": "To delay or postpone action; to put off doing something, especially out of habitual carelessness or laziness.",
-                "examples": [
-                    "I always procrastinate when it comes to doing my taxes.",
-                    "Don't procrastinate - the deadline is tomorrow!",
-                ],
-                "synonyms": ["delay", "postpone", "defer"],
-                "antonyms": ["act", "advance", "expedite"],
-                "collocations": ["tend to procrastinate", "chronic procrastinator"],
-                "russian": ["откладывать на потом", "медлить"],
-                "topics": ["behavior", "time management"],
-            },
-        ]
-
-    # Navigation state
-    if "current_card_index" not in st.session_state:
-        st.session_state.current_card_index = 0
-
     # Single page layout with two main columns
     col_editor, col_preview = st.columns([1, 1])
 
@@ -194,9 +139,9 @@ def main():
 
         cefr_level = st.selectbox(
             "CEFR Level",
-            options=["A1", "A2", "B1", "B2", "C1", "C2"],
-            index=["A1", "A2", "B1", "B2", "C1", "C2"].index(
-                current_card.get("cefr_level", "A1")
+            options=["A1", "A2", "B1", "B2", "C1", "C2", "?"],
+            index=["A1", "A2", "B1", "B2", "C1", "C2", "?"].index(
+                current_card.get("cefr_level", "?")
             ),
         )
         current_card["cefr_level"] = cefr_level
