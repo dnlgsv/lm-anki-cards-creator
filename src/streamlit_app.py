@@ -38,6 +38,8 @@ def main():
 
     # Sidebar for configuration.
     st.sidebar.header("Configuration")
+    deck_name = st.sidebar.text_input("Deck Name", value="IELTS Vocabulary")
+    model_path = st.sidebar.text_input("Model", value="models/gemma-2-2b-it-Q8_0.gguf")
     input_method = st.sidebar.radio("Input method", ("Text Input", "File Upload"))
 
     words = []
@@ -66,9 +68,7 @@ def main():
         prompt += context
 
     # Additional settings.
-    deck_name = st.sidebar.text_input("Deck Name", value="IELTS Vocabulary")
     audio_format = st.sidebar.selectbox("Audio Format", options=["mp3", "wav"], index=0)
-    model_path = st.sidebar.text_input("Model", value="models/gemma-2-2b-it-Q8_0.gguf")
     device = st.sidebar.selectbox("Device", options=["mps", "cpu", "cuda"], index=0)
     n_gpu_layers = st.sidebar.number_input(
         "Number of GPU Layers", min_value=0, value=8, step=1
@@ -109,7 +109,6 @@ def main():
         os.makedirs("data/anki_decks", exist_ok=True)
         output_path = os.path.join("data/anki_decks", "cards.apkg")
         package.write_to_file(output_path)
-        st.success("Anki deck package created.")
 
         # Provide a download link.
         with open(output_path, "rb") as f:
@@ -125,6 +124,7 @@ def main():
 
     with col_editor:
         st.subheader("Edit Flashcard")
+        st.markdown("---")
 
         current_card = st.session_state.flashcards[st.session_state.current_card_index]
 
@@ -223,7 +223,6 @@ def main():
                     len(st.session_state.flashcards) - 1
                 )
                 st.success("New card added!")
-                st.experimental_rerun()
 
         with col_del:
             if len(st.session_state.flashcards) > 1:
@@ -234,38 +233,35 @@ def main():
                         len(st.session_state.flashcards) - 1,
                     )
                     st.success("Card deleted!")
-                    st.experimental_rerun()
 
     with col_preview:
-        # st.info(f"Card {st.session_state.current_card_index + 1} of {len(st.session_state.flashcards)}")
+        # Phone preview and Card navigation buttons
+        _, col1, col2, col3, _ = st.columns([5, 1, 1, 1, 5])
+        with col1:
+            btn1 = st.button("⬅️", key="prev_page")
 
-        # Phone preview
-        st.markdown("#### Phone Display")
+        with col2:
+            btn2 = st.button("🔀", key="random_page")
+
+        with col3:
+            btn3 = st.button("➡️", key="next_page")
+
         current_card = st.session_state.flashcards[st.session_state.current_card_index]
         preview_html = render_phone_preview(current_card, True)
-        # st.markdown(preview_html, unsafe_allow_html=True)
         components.html(preview_html, height=800)
 
-        # Card navigation buttons
-        col_prev, col_rand, col_next = st.columns(3)
-
-        with col_prev:
-            if st.button("⬅️ Previous", use_container_width=True):
-                st.session_state.current_card_index = (
-                    st.session_state.current_card_index - 1
-                ) % len(st.session_state.flashcards)
-
-        with col_rand:
-            if st.button("🔀 Random", use_container_width=True):
-                st.session_state.current_card_index = random.randint(
-                    0, len(st.session_state.flashcards) - 1
-                )
-
-        with col_next:
-            if st.button("➡️ Next", use_container_width=True):
-                st.session_state.current_card_index = (
-                    st.session_state.current_card_index + 1
-                ) % len(st.session_state.flashcards)
+        if btn1:
+            st.session_state.current_card_index = (
+                st.session_state.current_card_index - 1
+            ) % len(st.session_state.flashcards)
+        if btn2:
+            st.session_state.current_card_index = random.randint(
+                0, len(st.session_state.flashcards) - 1
+            )
+        if btn3:
+            st.session_state.current_card_index = (
+                st.session_state.current_card_index + 1
+            ) % len(st.session_state.flashcards)
 
 
 if __name__ == "__main__":

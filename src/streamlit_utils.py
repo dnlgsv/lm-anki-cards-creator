@@ -126,16 +126,27 @@ def render_phone_preview(card, dark_mode=False):
                 ">{", ".join(card.get('russian', []))}</div>
             </div>
             ''' if card.get('russian', []) else ''}
+
+            {f'''
+            <div style="margin-bottom: 15px;">
+                <div style="
+                    font-weight: bold;
+                    color: {accent_color};
+                    margin-bottom: 5px;
+                    font-size: 14px;
+                ">Topics</div>
+            </div>
+            '''}
             
             <div style="
                 display: flex;
                 flex-wrap: wrap;
                 gap: 5px;
                 margin-top: 15px;
-            ">
+            ">  
                 {" ".join(f'<span style="background-color: {bg_color}; border: 1px solid {border_color}; color: {secondary_text}; padding: 3px 8px; border-radius: 10px; font-size: 12px;">{topic}</span>' for topic in card.get('topics', []))}
-                {" ".join(f'<span style="background-color: {bg_color}; border: 1px solid {border_color}; color: {secondary_text}; padding: 3px 8px; border-radius: 10px; font-size: 12px;">syn: {syn}</span>' for syn in card.get('synonyms', [])[:2])}
-                {" ".join(f'<span style="background-color: {bg_color}; border: 1px solid {border_color}; color: {secondary_text}; padding: 3px 8px; border-radius: 10px; font-size: 12px;">col: {col}</span>' for col in card.get('collocations', [])[:2])}
+                {f'<span style="background-color: {bg_color}; border: 1px solid {border_color}; color: {secondary_text}; padding: 3px 8px; border-radius: 10px; font-size: 12px;">synonyms: {", ".join(card.get('synonyms', []))}</span>'}
+                {f'<span style="background-color: {bg_color}; border: 1px solid {border_color}; color: {secondary_text}; padding: 3px 8px; border-radius: 10px; font-size: 12px;">collocations: {"; ".join(card.get('collocations', []))}</span>'}
             </div>
         </div>
         
