@@ -8,7 +8,6 @@ It produces JSON files with card data and an Anki package that includes audio re
 import argparse
 import json
 import os
-from pprint import pprint
 
 import genanki
 from llama_cpp import Llama
@@ -34,11 +33,16 @@ def get_expression_card_info(model, prompt: str, expression: str) -> dict:
         max_tokens=500,
     )
     answer = response["choices"][0]["message"]["content"].strip()
-    pprint(answer)
     # Extract the JSON part from the response.
     expression_card_info = answer[answer.find("json") + 4 :].replace("```", "").strip()
     expression_card_info = json.loads(expression_card_info)
     expression_card_info["expression"] = expression
+    # Remove 'Language learning' from topics.
+    expression_card_info["topics"] = [
+        topic
+        for topic in expression_card_info["topics"]
+        if topic.lower() != "language learning"
+    ]
     model.reset()
     return expression_card_info
 
@@ -62,11 +66,11 @@ def generate_cards_from_words(
         voicer = TextToSpeech()
 
         # Generate audio files for the word, definition, and example.
-        audio_word_filename = (
+        audio_expression_filename = (
             f"{word.lower().replace(' ', '_')}_expression.{audio_format}"
         )
         voicer.text_to_speech_elevenlabs(
-            card_data["expression"], f"data/audio/{audio_word_filename}"
+            card_data["expression"], f"data/audio/{audio_expression_filename}"
         )
 
         audio_definition_filename = (
@@ -83,10 +87,26 @@ def generate_cards_from_words(
             card_data["examples"], f"data/audio/{audio_example_filename}"
         )
 
+        audio_collocations_filename = (
+            f"{word.lower().replace(' ', '_')}_collocations.{audio_format}"
+        )
+        voicer.text_to_speech_elevenlabs(
+            card_data["collocations"], f"data/audio/{audio_collocations_filename}"
+        )
+
+        audio_synonyms_filename = (
+            f"{word.lower().replace(' ', '_')}_synonyms.{audio_format}"
+        )
+        voicer.text_to_speech_elevenlabs(
+            card_data["synonyms"], f"data/audio/{audio_synonyms_filename}"
+        )
+
         # Add audio tags to the card data.
-        card_data["audio_expression"] = f"[sound:{audio_word_filename}]"
+        card_data["audio_expression"] = f"[sound:{audio_expression_filename}]"
         card_data["audio_definition"] = f"[sound:{audio_definition_filename}]"
         card_data["audio_examples"] = f"[sound:{audio_example_filename}]"
+        card_data["audio_collocations"] = f"[sound:{audio_collocations_filename}]"
+        card_data["audio_synonyms"] = f"[sound:{audio_synonyms_filename}]"
 
         cards.append(card_data)
     return cards
