@@ -248,7 +248,7 @@ def main():
 
         current_card = st.session_state.flashcards[st.session_state.current_card_index]
         preview_html = render_phone_preview(current_card, True)
-        components.html(preview_html, height=800)
+        components.html(preview_html, height=1000)
 
         if btn1:
             st.session_state.current_card_index = (
