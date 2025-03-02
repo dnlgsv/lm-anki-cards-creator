@@ -14,6 +14,7 @@ from llama_cpp import Llama
 
 from anki_utils import create_anki_deck
 from audio_utils import TextToSpeech
+from nlp_utils import parse_words
 
 with open("prompts/prompt.json") as f:
     prompt = json.load(f)
@@ -110,29 +111,6 @@ def generate_cards_from_words(
 
         cards.append(card_data)
     return cards
-
-
-def parse_words(args: argparse.Namespace) -> list[str]:
-    """Parse the words either from a comma-separated string or from a file path."""
-    words = []
-    if args.words:
-        # Assume comma-separated words.
-        words = [word.strip() for word in args.words.split(",") if word.strip()]
-    elif args.file:
-        words = parse_file(args.file)
-    else:
-        raise ValueError("Either --words or --file must be provided.")
-    return words
-
-
-def parse_file(file_path: str) -> list[str]:
-    """Parse words from a file path."""
-    words = []
-    with open(file_path, "r") as f:
-        for line in f:
-            for word in line.split(","):
-                words.append(word.strip())
-    return words
 
 
 if __name__ == "__main__":
