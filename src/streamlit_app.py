@@ -5,6 +5,7 @@ to derive card details and a text-to-speech service to create corresponding audi
 It produces JSON files with card data and an Anki package that includes audio references.
 """
 
+import glob
 import json
 import os
 import random
@@ -15,7 +16,8 @@ import streamlit.components.v1 as components
 from llama_cpp import Llama
 
 from anki_utils import create_anki_deck
-from main import generate_cards_from_words, parse_file
+from main import generate_cards_from_words
+from nlp_utils import prepare_flashcard_candidates
 from streamlit_utils import render_phone_preview
 
 
@@ -39,22 +41,41 @@ def main():
     # Sidebar for configuration.
     st.sidebar.header("Configuration")
     deck_name = st.sidebar.text_input("Deck Name", value="IELTS Vocabulary")
-    model_path = st.sidebar.text_input("Model", value="models/gemma-2-2b-it-Q8_0.gguf")
-    input_method = st.sidebar.radio("Input method", ("Text Input", "File Upload"))
+    model_path = st.sidebar.selectbox(
+        "Model",
+        options=glob.glob("models/*.gguf"),
+        index=0,
+    )
+    input_method = st.sidebar.selectbox(
+        "Input method",
+        options=["Website", "File", "Youtube Video"],
+        index=0,
+    )
+    if input_method == "Website":
+        st.warning("Not implemented yet.")
+    elif input_method == "Youtube Video":
+        st.warning("Not implemented yet.")
+    else:
+        uploaded_file = st.sidebar.file_uploader(
+            "Upload a text file or use the input field below", type=["txt"]
+        )
+        default_words = "Furthermore, Moreover, In addition to this"
+        if uploaded_file is not None:
+            parsed_words = prepare_flashcard_candidates(uploaded_file)
+            if isinstance(parsed_words, list):
+                default_words = ", ".join(parsed_words)
+            else:
+                default_words = parsed_words
 
-    words = []
-    if input_method == "Text Input":
         words_input = st.sidebar.text_area(
             "Enter words (comma-separated)",
-            value="Furthermore, Moreover, In addition to this",
+            key="words_input_field",
+            value=default_words,
         )
+
         if words_input:
             words = [word.strip() for word in words_input.split(",") if word.strip()]
-    else:
-        uploaded_file = st.sidebar.file_uploader("Upload a text file", type=["txt"])
-        if uploaded_file is not None:
-            words = parse_file(uploaded_file.read())
-    st.sidebar.write(f"Words to process: {len(words)}")
+        st.sidebar.write(f"Words to process: {len(words)}")
 
     context_field = st.sidebar.text_area(
         "Context/topic",
