@@ -1,3 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lm_anki_cards_creator"
+version = "0.1.0"
+description = "A tool to generate Anki flashcards from vocabulary words using a language model."
+authors = [{ name = "Daniil Gusev", email = "your_email@example.com" }]
+dependencies = [
+    "genanki",
+    "llama-cpp-python",
+    "llama-cpp-python",
+    "elevenlabs",
+]
+
 [tool.ruff]
 line-length = 88
 select = ["E", "F", "I", "B", "C4", "N", "D"]
