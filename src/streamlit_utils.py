@@ -86,7 +86,7 @@ def render_phone_preview(card, dark_mode=False):
             <span>{current_time}</span>
             <span>📶 📊 100%</span>
         </div>
-        
+
         <!-- Content -->
         <div style="
             margin: 10px 15px;
@@ -106,8 +106,8 @@ def render_phone_preview(card, dark_mode=False):
                 font-size: 12px;
                 font-weight: bold;
                 margin-bottom: 12px;
-            ">{card.get('cefr_level', 'A1')}</div>
-            
+            ">{card.get("cefr_level", "A1")}</div>
+
             <!-- Expression with audio -->
             <div style="display: flex; align-items: center;">
                 <div style="
@@ -115,10 +115,10 @@ def render_phone_preview(card, dark_mode=False):
                     font-weight: bold;
                     margin-bottom: 5px;
                     color: {text_color};
-                ">{card.get('expression', 'Untitled Card')}</div>
+                ">{card.get("expression", "Untitled Card")}</div>
                 {get_audio_html(card, "audio_expression")}
             </div>
-          
+
             <!-- Definition with audio -->
             <div style="margin-bottom: 15px;">
                 <div style="
@@ -127,11 +127,13 @@ def render_phone_preview(card, dark_mode=False):
                     margin-bottom: 5px;
                     font-size: 14px;
                 ">Definition{get_audio_html(card, "audio_definition")}</div>
-                <div style="display: flex; align-items: center; color: {text_color}; font-size: 15px; line-height: 1.4;">
-                    <div>{card.get('definition', '')}</div>
+                <div style="display: flex; align-items: center; color: {
+        text_color
+    }; font-size: 15px; line-height: 1.4;">
+                    <div>{card.get("definition", "")}</div>
                 </div>
             </div>
-            
+
             <!-- Examples with audio -->
             <div style="margin-bottom: 15px;">
                 <div style="
@@ -141,16 +143,20 @@ def render_phone_preview(card, dark_mode=False):
                     font-size: 14px;
                 ">Examples{get_audio_html(card, "audio_examples")}</div>
                 <div style="color: {text_color}; font-size: 15px; line-height: 1.4;">
-                    {"".join(
-                        f'<div style="display: flex; align-items: center; border-left: 3px solid {accent_color}; padding-left: 10px; margin-bottom: 8px; font-style: italic;">'
-                        f'{example}'
-                        f'</div>' for example in card.get("examples", [])
-                    )}
+                    {
+        "".join(
+            f'<div style="display: flex; align-items: center; border-left: 3px solid {accent_color}; padding-left: 10px; margin-bottom: 8px; font-style: italic;">'
+            f"{example}"
+            f"</div>"
+            for example in card.get("examples", [])
+        )
+    }
                 </div>
             </div>
-            
+
             <!-- Collocations with audio -->
-            {f'''
+            {
+        f'''
             <div style="margin-bottom: 15px;">
                 <div style="
                     font-weight: bold;
@@ -159,13 +165,17 @@ def render_phone_preview(card, dark_mode=False):
                     font-size: 14px;
                 ">Collocations{get_audio_html(card, "audio_collocations")}</div>
                 <div style="display: flex; align-items: center; color: {text_color}; font-size: 15px; line-height: 1.4;">
-                    <div>{", ".join(card.get('collocations', []))}</div>
+                    <div>{", ".join(card.get("collocations", []))}</div>
                 </div>
             </div>
-            ''' if card.get("collocations", []) else ''}
-            
+            '''
+        if card.get("collocations", [])
+        else ""
+    }
+
             <!-- Synonyms with audio -->
-            {f'''
+            {
+        f'''
             <div style="margin-bottom: 15px;">
                 <div style="
                     font-weight: bold;
@@ -174,13 +184,17 @@ def render_phone_preview(card, dark_mode=False):
                     font-size: 14px;
                 ">Synonyms{get_audio_html(card, "audio_synonyms")}</div>
                 <div style="display: flex; align-items: center; color: {text_color}; font-size: 15px; line-height: 1.4;">
-                    <div>{", ".join(card.get('synonyms', []))}</div>
+                    <div>{", ".join(card.get("synonyms", []))}</div>
                 </div>
             </div>
-            ''' if card.get("synonyms", []) else ''}
-            
+            '''
+        if card.get("synonyms", [])
+        else ""
+    }
+
             <!-- Topics with audio -->
-            {f'''
+            {
+        f'''
             <div style="margin-bottom: 15px;">
                 <div style="
                     font-weight: bold;
@@ -189,13 +203,17 @@ def render_phone_preview(card, dark_mode=False):
                     font-size: 14px;
                 ">Topics</div>
                 <div style="display: flex; align-items: center; color: {text_color}; font-size: 15px; line-height: 1.4;">
-                    <div>{", ".join(card.get('topics', []))}</div>
+                    <div>{", ".join(card.get("topics", []))}</div>
                 </div>
             </div>
-            ''' if card.get("topics", []) else ''}
-            
+            '''
+        if card.get("topics", [])
+        else ""
+    }
+
             <!-- Russian (no audio) -->
-            {f'''
+            {
+        f'''
             <div style="margin-bottom: 15px;">
                 <div style="
                     font-weight: bold;
@@ -207,11 +225,14 @@ def render_phone_preview(card, dark_mode=False):
                     color: {text_color};
                     font-size: 15px;
                     line-height: 1.4;
-                ">{", ".join(card.get('russian', []))}</div>
+                ">{", ".join(card.get("russian", []))}</div>
             </div>
-            ''' if card.get("russian", []) else ''}
+            '''
+        if card.get("russian", [])
+        else ""
+    }
         </div>
-        
+
         <!-- JavaScript to handle individual audio toggling -->
         <script>
             function toggleAudio(audioKey) {{
@@ -226,7 +247,7 @@ def render_phone_preview(card, dark_mode=False):
                 }}
             }}
         </script>
-        
+
         <!-- Footer -->
         <div style="
             display: flex;
@@ -235,9 +256,15 @@ def render_phone_preview(card, dark_mode=False):
         ">
             <span>•</span>
             <div>
-                <span style="height: 5px; width: 5px; border-radius: 50%; background-color: {secondary_text}; margin: 0 3px; display: inline-block;"></span>
-                <span style="height: 5px; width: 15px; border-radius: 3px; background-color: {accent_color}; margin: 0 3px; display: inline-block;"></span>
-                <span style="height: 5px; width: 5px; border-radius: 50%; background-color: {secondary_text}; margin: 0 3px; display: inline-block;"></span>
+                <span style="height: 5px; width: 5px; border-radius: 50%; background-color: {
+        secondary_text
+    }; margin: 0 3px; display: inline-block;"></span>
+                <span style="height: 5px; width: 15px; border-radius: 3px; background-color: {
+        accent_color
+    }; margin: 0 3px; display: inline-block;"></span>
+                <span style="height: 5px; width: 5px; border-radius: 50%; background-color: {
+        secondary_text
+    }; margin: 0 3px; display: inline-block;"></span>
             </div>
             <span>•</span>
         </div>
