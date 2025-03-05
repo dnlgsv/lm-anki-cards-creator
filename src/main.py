@@ -10,6 +10,7 @@ import json
 import os
 
 import genanki
+from langchain_openai import ChatOpenAI
 from llama_cpp import Llama
 
 from anki_utils import create_anki_deck
@@ -20,22 +21,37 @@ with open("prompts/prompt.json") as f:
     prompt = json.load(f)
 
 
-def get_expression_card_info(model, prompt: str, expression: str) -> dict:
+def get_expression_card_info(model_name, prompt: str, expression: str) -> dict:
     """Generate card information for a given expression by interacting with a language model."""
-    response = model.create_chat_completion(
-        messages=[
-            {
-                "role": "user",
-                "content": f"The expression to analyze is: ```{expression}```",
-            },
-            {"role": "assistant", "content": prompt},
-        ],
-        temperature=0.0,
-        max_tokens=500,
-    )
-    answer = response["choices"][0]["message"]["content"].strip()
-    # Extract the JSON part from the response.
-    expression_card_info = answer[answer.find("json") + 4 :].replace("```", "").strip()
+    if model_name.startswith("models"):
+        model = Llama(
+            model_path=model_path,
+            n_ctx=8192,
+            device=device,
+            n_gpu_layers=n_gpu_layers if device in ("mps", "cuda") else 0,
+            verbose=False,
+        )
+        response = model.create_chat_completion(
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"The expression to analyze is: ```{expression}```",
+                },
+                {"role": "assistant", "content": prompt},
+            ],
+            temperature=0.0,
+            max_tokens=500,
+        )
+        answer = response["choices"][0]["message"]["content"].strip()
+        # Extract the JSON part from the response.
+        expression_card_info = (
+            answer[answer.find("json") + 4 :].replace("```", "").strip()
+        )
+    else:
+        model = ChatOpenAI(model=model_name)
+        expression_card_info = model.invoke(
+            f"The expression to analyze is: ```{expression}```" + prompt
+        ).content
     expression_card_info = json.loads(expression_card_info)
     expression_card_info["expression"] = expression
     # Remove 'Language learning' from topics.
@@ -44,12 +60,13 @@ def get_expression_card_info(model, prompt: str, expression: str) -> dict:
         for topic in expression_card_info["topics"]
         if topic.lower() != "language learning"
     ]
-    model.reset()
+    if model_name.startswith("models"):
+        model.reset()
     return expression_card_info
 
 
 def generate_cards_from_words(
-    model, prompt: str, words_list: list[str], audio_format: str = "mp3"
+    model_name, prompt: str, words_list: list[str], audio_format: str = "mp3"
 ) -> list[dict]:
     """Generate Anki cards from a list of words by creating JSON data and corresponding audio files."""
     cards = []
@@ -58,7 +75,7 @@ def generate_cards_from_words(
     for idx, word in enumerate(words_list):
         print("-/-" * 20)
         print(f"Generating card for '{word}': {idx + 1}/{n}")
-        card_data = get_expression_card_info(model, prompt, word)
+        card_data = get_expression_card_info(model_name, prompt, word)
         output_json_path = (
             f"data/processed_expressions/{word.lower().replace(' ', '_')}.json"
         )

@@ -13,7 +13,6 @@ import random
 import genanki
 import streamlit as st
 import streamlit.components.v1 as components
-from llama_cpp import Llama
 
 from anki_utils import create_anki_deck
 from main import generate_cards_from_words
@@ -43,12 +42,15 @@ def main():
     deck_name = st.sidebar.text_input("Deck Name", value="IELTS Vocabulary")
     model_path = st.sidebar.selectbox(
         "Model",
-        options=glob.glob("models/*.gguf"),
+        options=glob.glob("models/*.gguf") + ["gpt-4o-mini"],
         index=0,
     )
+    if model_path == "gpt-4o-mini":
+        openai_api_key = st.sidebar.text_input("OpenAI API Key")
+        os.environ["OPENAI_API_KEY"] = openai_api_key
     input_method = st.sidebar.selectbox(
         "Input method",
-        options=["Website", "File", "Youtube Video"],
+        options=["Text/File", "Website link", "Youtube link"],
         index=0,
     )
     if input_method == "Website":
@@ -79,7 +81,7 @@ def main():
 
     context_field = st.sidebar.text_area(
         "Context/topic",
-        value="",
+        value="Science",
         help="Provide a context/topic in which the words will be used.",
     )
     context = ""
@@ -90,10 +92,7 @@ def main():
 
     # Additional settings.
     audio_format = st.sidebar.selectbox("Audio Format", options=["mp3", "wav"], index=0)
-    device = st.sidebar.selectbox("Device", options=["mps", "cpu", "cuda"], index=0)
-    n_gpu_layers = st.sidebar.number_input(
-        "Number of GPU Layers", min_value=0, value=8, step=1
-    )
+    # device = st.sidebar.selectbox("Device", options=["mps", "cpu", "cuda"], index=0)
 
     # Button to start generation.
     if st.sidebar.button("Generate Anki Deck"):
@@ -102,16 +101,8 @@ def main():
             return
 
         # Initialize the model.
-        model = Llama(
-            model_path=model_path,
-            n_ctx=8192,
-            device=device,
-            n_gpu_layers=n_gpu_layers if device in ("mps", "cuda") else 0,
-            verbose=False,
-        )
-
         st.session_state.flashcards = generate_cards_from_words(
-            model, prompt, words, audio_format=audio_format
+            model_path, prompt, words, audio_format=audio_format
         )
         with open("data/json files/cards_data.json", "w") as f:
             json.dump(st.session_state.flashcards, f, indent=4)
