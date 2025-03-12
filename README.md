@@ -35,3 +35,8 @@ lm-anki-cards-creator leverages both small and large language models to generate
   ```
   streamlit run streamlit_app.py
   ```
+
+## Recommended Models
+- **GEMMA3:**
+- **Qwen2.5:**
+- **LLama3.2:**
