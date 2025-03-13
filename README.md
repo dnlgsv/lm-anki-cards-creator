@@ -35,7 +35,11 @@ lm-anki-cards-creator leverages both small and large language models to generate
   ```
   streamlit run streamlit_app.py
   ```
-
+- **With a Docker Container:** Build the Docker image and run the container.
+  ```
+  docker build -t lm-anki-cards-creator .
+  docker run -p 8501:8501 lm-anki-cards-creator
+  ```
 ## Recommended Models
 - **GEMMA3:**
 - **Qwen2.5:**
