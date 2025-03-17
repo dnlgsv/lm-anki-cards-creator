@@ -45,9 +45,19 @@ def main():
         options=glob.glob("models/*.gguf") + ["gpt-4o-mini"],
         index=0,
     )
+    audio_model_path = st.sidebar.selectbox(
+        "Audio Model",
+        options=["gTTS", "ElevenLabs"],
+        index=0,
+    )
+    if audio_model_path == "ElevenLabs":
+        elevenlabs_api_key = st.sidebar.text_input("ElevenLabs API Key")
+        os.environ["ELEVENLABS_API_KEY"] = elevenlabs_api_key
+
     if model_path == "gpt-4o-mini":
         openai_api_key = st.sidebar.text_input("OpenAI API Key")
         os.environ["OPENAI_API_KEY"] = openai_api_key
+
     input_method = st.sidebar.selectbox(
         "Input method",
         options=["Text/File", "Website link", "Youtube link"],
