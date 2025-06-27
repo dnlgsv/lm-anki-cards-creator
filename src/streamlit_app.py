@@ -14,10 +14,52 @@ import genanki
 import streamlit as st
 import streamlit.components.v1 as components
 
-from anki_utils import create_anki_deck
-from main import generate_cards_from_words
-from nlp_utils import prepare_flashcard_candidates
-from streamlit_utils import render_phone_preview
+# ---------------------------------------------------------------------------
+# Import project modules
+# ---------------------------------------------------------------------------
+# When this file is executed with ``streamlit run src/streamlit_app.py`` the
+# module is launched as a top-level script (``__package__`` is ``None``). In
+# that execution mode, the relative imports (``from .anki_utils ...``) fail
+# because Python does not recognise the current file as part of a package.
+#
+# The try/except block below first attempts the regular *package* imports that
+# work when the project is installed (``uv pip install -e .``) and the module
+# is executed with ``python -m src.streamlit_app`` or via the console entry
+# point. If that fails (e.g. when launched directly with *Streamlit*), we add
+# the parent directory of *src* to ``sys.path`` and fall back to absolute
+# imports so that the file can still be executed in-place without installation.
+# ---------------------------------------------------------------------------
+
+try:
+    # Package-relative imports (work when ``src`` is recognised as a package)
+    from .anki_utils import create_anki_deck
+    from .config import config
+    from .logger import get_logger
+    from .main import AnkiCardsGenerator, load_prompt
+    from .nlp_utils import prepare_flashcard_candidates
+    from .streamlit_utils import render_phone_preview
+except (ImportError, SystemError):  # Fallback for "script" execution mode
+    import sys
+    from pathlib import Path
+
+    # Add the *project root* to ``sys.path`` so that the ``src`` package can be
+    # imported via its fully-qualified name.
+    _this_file = Path(__file__).resolve()
+    _src_dir = _this_file.parent
+    _project_root = _src_dir.parent
+    if str(_project_root) not in sys.path:
+        sys.path.insert(0, str(_project_root))
+
+    # Now import via the *package* path so that intra-package relative imports
+    # (e.g. ``from .exceptions import ...`` inside other modules) keep working.
+    from src.anki_utils import create_anki_deck  # type: ignore
+    from src.config import config  # type: ignore
+    from src.logger import get_logger  # type: ignore
+    from src.main import AnkiCardsGenerator, load_prompt  # type: ignore
+    from src.nlp_utils import prepare_flashcard_candidates  # type: ignore
+    from src.streamlit_utils import render_phone_preview  # type: ignore
+
+logger = get_logger(__name__)
 
 
 def main():
@@ -28,14 +70,16 @@ def main():
 
     # Sample flashcards
     if "flashcards" not in st.session_state:
-        st.session_state.flashcards = [{}]
-
-    # Navigation state
+        st.session_state.flashcards = [{}]  # Navigation state
     if "current_card_index" not in st.session_state:
         st.session_state.current_card_index = 0
 
-    with open("prompts/prompt.json") as f:
-        prompt = json.load(f)
+    try:
+        prompt = load_prompt()
+    except Exception as e:
+        logger.error(f"Failed to load prompt: {e}")
+        st.error(f"❌ Failed to load prompt: {e}")
+        return
 
     # Sidebar for configuration.
     st.sidebar.header("Configuration")
@@ -63,9 +107,7 @@ def main():
         options=["Text/File", "Website link", "Youtube link"],
         index=0,
     )
-    if input_method == "Website":
-        st.warning("Not implemented yet.")
-    elif input_method == "Youtube Video":
+    if input_method == "Website" or input_method == "Youtube Video":
         st.warning("Not implemented yet.")
     else:
         uploaded_file = st.sidebar.file_uploader(
@@ -108,38 +150,51 @@ def main():
     if st.sidebar.button("Generate Anki Deck"):
         if not words:
             st.error("Please provide some words either via text input or file upload.")
-            return
-
-        # Initialize the model.
-        st.session_state.flashcards = generate_cards_from_words(
-            model_path, prompt, words, audio_format=audio_format
-        )
-        with open("data/json files/cards_data.json", "w") as f:
-            json.dump(st.session_state.flashcards, f, indent=4)
-
-        # Create the Anki deck.
-        my_deck = create_anki_deck(st.session_state.flashcards, deck_name=deck_name)
-
-        # Export Anki deck package.
-        package = genanki.Package(my_deck)
-        audio_folder = "data/audio"
-        package.media_files = [
-            os.path.join(audio_folder, f)
-            for f in os.listdir(audio_folder)
-            if f.endswith(audio_format)
-        ]
-        os.makedirs("data/anki_decks", exist_ok=True)
-        output_path = os.path.join("data/anki_decks", "cards.apkg")
-        package.write_to_file(output_path)
-
-        # Provide a download link.
-        with open(output_path, "rb") as f:
-            st.download_button(
-                label="Download Anki Deck",
-                data=f,
-                file_name="cards.apkg",
-                mime="application/octet-stream",
+            return  # Initialize the generator and create cards.
+        try:
+            generator = AnkiCardsGenerator()
+            st.session_state.flashcards = generator.generate_cards_from_words(
+                model_path, prompt, words, audio_format=audio_format
             )
+
+            # Save cards data
+            config.json_files_dir.mkdir(exist_ok=True)
+            cards_data_path = config.json_files_dir / "cards_data.json"
+            with open(cards_data_path, "w", encoding="utf-8") as f:
+                json.dump(st.session_state.flashcards, f, indent=4, ensure_ascii=False)
+
+            # Create the Anki deck.
+            my_deck = create_anki_deck(st.session_state.flashcards, deck_name=deck_name)
+
+            # Export Anki deck package.
+            package = genanki.Package(my_deck)
+
+            # Add audio files to package
+            audio_files = list(config.audio_dir.glob(f"*.{audio_format}"))
+            package.media_files = [str(f) for f in audio_files]
+
+            # Save the package
+            config.anki_decks_dir.mkdir(exist_ok=True)
+            output_path = config.anki_decks_dir / "cards.apkg"
+            package.write_to_file(str(output_path))
+
+            # Provide a download link.
+            with open(output_path, "rb") as f:
+                st.download_button(
+                    label="Download Anki Deck",
+                    data=f,
+                    file_name="cards.apkg",
+                    mime="application/octet-stream",
+                )
+
+            st.success(
+                f"✅ Successfully generated {len(st.session_state.flashcards)} cards!"
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to generate flashcards: {e}")
+            st.error(f"❌ Error generating flashcards: {e}")
+            return
 
     # Single page layout with two main columns
     col_editor, col_preview = st.columns([1, 1])
@@ -247,14 +302,15 @@ def main():
                 st.success("New card added!")
 
         with col_del:
-            if len(st.session_state.flashcards) > 1:
-                if st.button("Delete Current Card", use_container_width=True):
-                    st.session_state.flashcards.pop(st.session_state.current_card_index)
-                    st.session_state.current_card_index = min(
-                        st.session_state.current_card_index,
-                        len(st.session_state.flashcards) - 1,
-                    )
-                    st.success("Card deleted!")
+            if len(st.session_state.flashcards) > 1 and st.button(
+                "Delete Current Card", use_container_width=True
+            ):
+                st.session_state.flashcards.pop(st.session_state.current_card_index)
+                st.session_state.current_card_index = min(
+                    st.session_state.current_card_index,
+                    len(st.session_state.flashcards) - 1,
+                )
+                st.success("Card deleted!")
 
     with col_preview:
         # Phone preview and Card navigation buttons

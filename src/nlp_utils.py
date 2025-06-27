@@ -1,49 +1,103 @@
-"""Utility functions for natural language processing tasks."""
+"""NLP utilities for the Anki Card Generator."""
 
 import argparse
 import re
 import unicodedata
 from collections import Counter
-from typing import List
+from typing import TextIO
 
 import nltk
 import streamlit as st
 
-nltk.download("stopwords", quiet=True)
+try:
+    from .exceptions import FileProcessingError
+    from .logger import get_logger
+except ImportError:
+    # Fallback for script execution
+    from src.exceptions import FileProcessingError  # type: ignore
+    from src.logger import get_logger  # type: ignore
+
+# Download required NLTK data
+try:
+    nltk.download("stopwords", quiet=True)
+    nltk.download("punkt", quiet=True)
+except Exception:
+    pass  # Fail silently if NLTK download fails
+
+logger = get_logger(__name__)
 
 
 def parse_words(args: argparse.Namespace) -> list[str]:
-    """Parse the words either from a comma-separated string or from a file path."""
-    words = []
-    if args.words:
-        # Assume comma-separated words.
-        words = [word.strip() for word in args.words.split(",") if word.strip()]
-    elif args.file:
-        words = parse_file(args.file)
-    else:
-        raise ValueError("Either --words or --file must be provided.")
-    return words
+    """Parse the words either from a comma-separated string or from a file path.
+
+    Args:
+        args: Command line arguments containing words or file path
+
+    Returns:
+        List of parsed words
+
+    Raises:
+        ValueError: If neither words nor file is provided
+        FileProcessingError: If file parsing fails
+    """
+    try:
+        words = []
+        if args.words:
+            # Assume comma-separated words.
+            words = [word.strip() for word in args.words.split(",") if word.strip()]
+        elif args.file:
+            words = parse_file(args.file)
+        else:
+            raise ValueError("Either --words or --file must be provided.")
+
+        logger.info(f"Successfully parsed {len(words)} words")
+        return words
+
+    except Exception as e:
+        logger.error(f"Failed to parse words: {e}")
+        if isinstance(e, ValueError):
+            raise
+        raise FileProcessingError(f"Failed to parse words: {e}") from e
 
 
-def parse_file(file_input) -> list[str]:
-    """Parse words from a file path or a file-like object (e.g., Streamlit UploadedFile)."""
-    # If the input is file-like, it should have a 'read' attribute.
-    if hasattr(file_input, "read"):
-        content = file_input.read()
-        # UploadedFile might return bytes; decode if needed.
-        if isinstance(content, bytes):
-            content = content.decode("utf-8")
-    else:
-        # Otherwise, assume it's a path and open it.
-        with open(file_input, "r", encoding="utf-8") as f:
-            content = f.read()
+def parse_file(file_input: str | TextIO) -> list[str]:
+    """Parse words from a file path or a file-like object (e.g., Streamlit UploadedFile).
 
-    words = []
-    # Split content into lines, then by commas, stripping whitespace.
-    for line in content.splitlines():
-        for word in line.split():
-            words.append(word.strip())
-    return words
+    Args:
+        file_input: File path string or file-like object
+
+    Returns:
+        List of parsed words
+
+    Raises:
+        FileProcessingError: If file processing fails
+    """
+    try:
+        # If the input is file-like, it should have a 'read' attribute.
+        if hasattr(file_input, "read"):
+            content = file_input.read()
+            # UploadedFile might return bytes; decode if needed.
+            if isinstance(content, bytes):
+                content = content.decode("utf-8")
+        else:
+            # Otherwise, assume it's a path and open it.
+            with open(file_input, encoding="utf-8") as f:
+                content = f.read()
+
+        words = []
+        # Split content into lines, then by commas, stripping whitespace.
+        for line in content.splitlines():
+            for word in line.split():
+                clean_word = word.strip().rstrip(",.")
+                if clean_word:
+                    words.append(clean_word)
+
+        logger.debug(f"Parsed {len(words)} words from file")
+        return words
+
+    except Exception as e:
+        logger.error(f"Failed to parse file: {e}")
+        raise FileProcessingError(f"Failed to parse file: {e}") from e
 
 
 def clean_text(text: str) -> str:
@@ -61,8 +115,8 @@ def clean_text(text: str) -> str:
 
 
 def filter_tokens(
-    tokens: List[str], stopwords: set = None, min_length: int = 2
-) -> List[str]:
+    tokens: list[str], stopwords: set = None, min_length: int = 2
+) -> list[str]:
     """Filter tokens based on stopwords and minimum length."""
     if stopwords is None:
         # Default stopwords from NLTK
@@ -80,9 +134,9 @@ def filter_tokens(
     return filtered
 
 
-def extract_ngrams(tokens: List[str], n: int = 2, min_freq: int = 2) -> List[str]:
+def extract_ngrams(tokens: list[str], n: int = 2, min_freq: int = 2) -> list[str]:
     """Extract n-grams from a list of tokens."""
-    ngrams = zip(*[tokens[i:] for i in range(n)])
+    ngrams = zip(*[tokens[i:] for i in range(n)], strict=False)
     ngrams = [" ".join(gram) for gram in ngrams]
     freq = Counter(ngrams)
     # Return n-grams that occur at least min_freq times
