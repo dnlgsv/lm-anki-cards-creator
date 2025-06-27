@@ -17,8 +17,32 @@ from anki_utils import create_anki_deck
 from audio_utils import TextToSpeech
 from nlp_utils import parse_words
 
-with open("prompts/prompt.json") as f:
-    prompt = json.load(f)
+
+def load_prompt() -> str:
+    """Load the prompt from the JSON file."""
+    with open("prompts/prompt.json") as f:
+        prompt_data = json.load(f)
+    # If it's a string, return it directly
+    if isinstance(prompt_data, str):
+        return prompt_data
+    # Otherwise, try to get the "user" field
+    return prompt_data.get("user", "")
+
+
+class AnkiCardsGenerator:
+    """Generate Anki cards from words using a language model."""
+
+    def __init__(self):
+        """Initialize the generator."""
+        self.model = None
+        self.device = "mps"
+        self.n_gpu_layers = 8
+
+    def generate_cards_from_words(
+        self, model_name, prompt: str, words_list: list[str], audio_format: str = "mp3"
+    ) -> list[dict]:
+        """Generate Anki cards from a list of words."""
+        return generate_cards_from_words(model_name, prompt, words_list, audio_format)
 
 
 def get_expression_card_info(model_name, prompt: str, expression: str) -> dict:
